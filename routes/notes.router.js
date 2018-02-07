@@ -31,8 +31,9 @@ router.get('/notes', (req, res, next) => {
   console.log(searchTerm);
   
   knex
-    .select('notes.id', 'title', 'content')
+    .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
     .from('notes')
+    .leftJoin('folders', 'notes.folder_id', 'folders.id')
     .where(function () {
       if (searchTerm) {
         this.where('title', 'like', `%${searchTerm}%`);
