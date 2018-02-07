@@ -33,7 +33,6 @@ router.get('/notes', (req, res, next) => {
   knex
     .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
     .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id')
     .where(function () {
       if (searchTerm) {
         this.where('title', 'like', `%${searchTerm}%`);
@@ -71,7 +70,6 @@ router.get('/notes/:id', (req, res, next) => {
   knex
     .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
     .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id')    
     .where('notes.id', noteId)
     .then(result => {
       if (result) {
