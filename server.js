@@ -5,10 +5,11 @@ const morgan = require('morgan');
 
 const { PORT } = require('./config');
 
-const notesRouterV2 = require('./routes/notes.router');
+const notesRouterV2 = require('./routes/folders.router');
 
 // Create an Express application
 const app = express();
+app.use('/v2', foldersRouterV2);
 
 // Log all requests. Skip logging during
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'common', {
