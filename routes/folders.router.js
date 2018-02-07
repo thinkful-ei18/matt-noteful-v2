@@ -26,6 +26,11 @@ router.get('/folders', (req, res, next) => {
         this.where('title', 'like', `%${searchTerm}%`);
       }
     })
+    .where(function () {
+      if (req.query.folderId) {
+        this.where('folder_id', req.query.folderId)
+      }
+    })
     .then(results => {
       res.json(results);
       // console.log(results);
@@ -60,9 +65,14 @@ router.get('/folders/:id', (req, res, next) => {
     .from('notes')
     .leftJoin('folders', 'notes.folder_id', 'folders.id')    
     .where('notes.id', noteId)
+    // .where(function () {
+    //   if (req.query.folderId) {
+    //     this.where('folder_id', req.query.folderId)
+    //   }
+    // })
     .then(result => {
       if (result) {
-        console.log('PRINTING RESULT: ', result);
+        // console.log('PRINTING RESULT: ', result);
         
         res.json(result[0]);
       } else {
@@ -70,6 +80,39 @@ router.get('/folders/:id', (req, res, next) => {
       }
     })
     .catch(next);
+
+});
+
+/* ========== POST/CREATE ITEM ========== */
+router.post('/folders', (req, res, next) => {
+  const { title, content } = req.body;
+  
+  const newItem = { title, content };
+  /***** Never trust users - validate input *****/
+  if (!newItem.title) {
+    const err = new Error('Missing `title` in request body');
+    err.status = 400;
+    return next(err);
+  }
+
+  /*
+  notes.create(newItem)
+    .then(item => {
+      if (item) {
+        res.location(`http://${req.headers.host}/notes/${item.id}`).status(201).json(item);
+      } 
+    })
+    .catch(err => next(err));
+  */
+
+  knex
+    .insert(newItem)
+    .into('notes')
+    .returning(['id', 'title', 'content'])
+    .then((result) => {
+      res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
+    })
+    .catch(err => {console.error(err);});
 
 });
 
