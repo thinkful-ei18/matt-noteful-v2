@@ -19,6 +19,6 @@ router.get('/notes', (req, res, next) => {
     })
     .catch(err => next(err)); 
   */
-  console.log(req.query.searchTerm);
+  // console.log(req.query.searchTerm);
   next();
 });

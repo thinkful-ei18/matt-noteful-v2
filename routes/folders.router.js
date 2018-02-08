@@ -1,12 +1,15 @@
+'use strict';
+
 const express = require('express');
 const knex = require('../knex');
 
 const router = express.Router();
 
 // Get All (and search by query)
-/* ========== GET/READ ALL NOTES ========== */
+/* ========== GET/READ ALL FOLDERS ========== */
 router.get('/folders', (req, res, next) => {
-  const { searchTerm } = req.query;
+  // const { searchTerm } = req.query;
+  // explain: don't need this ^
   /* 
   notes.filter(searchTerm)
     .then(list => {
@@ -15,33 +18,18 @@ router.get('/folders', (req, res, next) => {
     .catch(err => next(err)); 
   */
 
-  console.log(searchTerm);
+  // console.log(searchTerm);
   
   knex
-    .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
-    .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id')
-    .where(function () {
-      if (searchTerm) {
-        this.where('title', 'like', `%${searchTerm}%`);
-      }
-    })
-    .where(function () {
-      if (req.query.folderId) {
-        this.where('folder_id', req.query.folderId)
-      }
-    })
+    .select('id', 'name')
+    .from('folders')
     .then(results => {
       res.json(results);
-      // console.log(results);
     })
-    .catch(err => {
-      console.error(err);
-    })
-  
+    .catch(next);
 });
 
-/* ========== GET/READ SINGLE NOTES ========== */
+/* ========== GET/READ SINGLE FOLDERS ========== */
 router.get('/folders/:id', (req, res, next) => {
   const noteId = req.params.id;
 
@@ -57,43 +45,38 @@ router.get('/folders/:id', (req, res, next) => {
     .catch(err => next(err));
   */
 
-  console.log(noteId);
+  // console.log(noteId);
   
 
   knex
-    .select('notes.id', 'title', 'content', 'folder_id', 'folders.name as folder_name')
-    .from('notes')
-    .leftJoin('folders', 'notes.folder_id', 'folders.id')    
-    .where('notes.id', noteId)
-    // .where(function () {
-    //   if (req.query.folderId) {
-    //     this.where('folder_id', req.query.folderId)
-    //   }
-    // })
-    .then(result => {
-      if (result) {
-        // console.log('PRINTING RESULT: ', result);
-        
-        res.json(result[0]);
+    .select('id', 'name')
+    .where('id', noteId)
+    .from('folders')
+    .then(results => {
+      if (results) {
+        res.json(result);
       } else {
-        next(); // fall-through to 404 handler
+        next();
       }
     })
     .catch(next);
-
 });
 
 /* ========== POST/CREATE ITEM ========== */
 router.post('/folders', (req, res, next) => {
-  const { title, content } = req.body;
+  const { name } = req.body;
   
-  const newItem = { title, content };
+  
+  // let noteId;
+  
   /***** Never trust users - validate input *****/
-  if (!newItem.title) {
-    const err = new Error('Missing `title` in request body');
+  if (!name) {
+    const err = new Error('Missing `name` in request body');
     err.status = 400;
     return next(err);
   }
+  
+  const newItem = { name };
 
   /*
   notes.create(newItem)
@@ -105,15 +88,21 @@ router.post('/folders', (req, res, next) => {
     .catch(err => next(err));
   */
 
+  // Insert new note, instead of returning all the fields, just return the new `id`
   knex
     .insert(newItem)
-    .into('notes')
-    .returning(['id', 'title', 'content'])
-    .then((result) => {
+    .into('folders')
+    .returning('id', 'name')
+    .then(([results]) => {
       res.location(`${req.originalUrl}/${result.id}`).status(201).json(result);
     })
-    .catch(err => {console.error(err);});
-
+    .catch(err => {
+      if (err.code === UNIQUE_VIOLATION && err.constraint === 'folders_name_key') {
+        err = new Error('Folder name is already taken');
+        err.status = 409;
+      } 
+      next(err);
+    });
 });
 
 module.exports = router;
