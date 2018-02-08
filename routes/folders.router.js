@@ -1,9 +1,12 @@
 'use strict';
 
 const express = require('express');
+const router = express.Router();
+
 const knex = require('../knex');
 
-const router = express.Router();
+// const { UNIQUE_VIOLATION } = require('pg-error-constants');
+
 
 // Get All (and search by query)
 /* ========== GET/READ ALL FOLDERS ========== */
