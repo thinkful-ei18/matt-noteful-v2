@@ -10,5 +10,9 @@ $(document).ready(function () {
       noteful.render();
     });
 
+  api.search('/v2/folders')
+    .then(response => {
+      store.folders = response;
+      noteful.render();
+    });
 });
-
